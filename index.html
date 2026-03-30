@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>إدارة المحلات</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Identity Services -->
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
+</head>
+<body>
+
+  <!-- ===== LOGIN PAGE ===== -->
+  <section id="page-login" class="page active">
+    <div class="login-wrapper">
+      <div class="login-card">
+        <h1 class="login-title">نظام إدارة المحلات</h1>
+        <p class="login-subtitle">اختر اسمك للدخول إلى فرعك</p>
+
+        <div class="branch-buttons">
+          <button class="branch-btn" onclick="selectBranch('حسن')">
+            <span class="branch-btn__name">حسن</span>
+            <span class="branch-btn__label">فرع حسن</span>
+          </button>
+          <button class="branch-btn" onclick="selectBranch('أحمد')">
+            <span class="branch-btn__name">أحمد</span>
+            <span class="branch-btn__label">فرع أحمد</span>
+          </button>
+          <button class="branch-btn" onclick="selectBranch('المحل')">
+            <span class="branch-btn__name">المحل</span>
+            <span class="branch-btn__label">المحل الرئيسي</span>
+          </button>
+        </div>
+
+        <p class="login-hint">اضغط على اسمك للدخول مباشرة</p>
+
+        <div id="login-error" class="login-error" style="display:none;"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== SETUP PAGE ===== -->
+  <section id="page-setup" class="page">
+    <div class="setup-wrapper">
+      <div class="setup-card">
+        <h2 id="setup-title" class="setup-title">إعداد جداول البيانات</h2>
+
+        <div class="setup-instructions">
+          <p>افتح <strong>Google Sheets</strong> وأنشئ جدول بيانات جديد خاص بهذا الفرع.</p>
+          <p>ثم انسخ الرمز من الرابط — هو النص الطويل بين <code>/d/</code> و <code>/edit</code> — والصقه هنا.</p>
+          <div class="setup-example">
+            <p class="example-label">رابط مثال:</p>
+            <code class="example-url">https://docs.google.com/spreadsheets/d/<span class="example-highlight">[الرمز هنا]</span>/edit</code>
+          </div>
+        </div>
+
+        <div class="form-group" id="setup-id-group">
+          <label for="spreadsheet-id-input" class="form-label">رمز جدول البيانات</label>
+          <input
+            type="text"
+            id="spreadsheet-id-input"
+            class="form-input"
+            placeholder="أدخل الرمز هنا..."
+            autocomplete="off"
+            spellcheck="false"
+          >
+          <span class="form-error" id="setup-id-error"></span>
+        </div>
+
+        <div id="setup-general-error" class="alert alert-danger" style="display:none;"></div>
+
+        <div class="setup-actions">
+          <button class="btn btn-primary" id="setup-submit-btn" onclick="onSetupSubmit()">
+            حفظ والمتابعة
+          </button>
+        </div>
+
+        <a href="#" class="setup-back" onclick="logout(); return false;">← العودة لاختيار الفرع</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== MAIN APP PAGE ===== -->
+  <section id="page-app" class="page">
+
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar__right">
+        <span class="topbar__appname">إدارة المحلات</span>
+      </div>
+      <div class="topbar__center">
+        <span class="topbar__branch" id="topbar-branch">فرع: —</span>
+      </div>
+      <div class="topbar__left">
+        <button class="btn-logout" onclick="logout()">تسجيل خروج</button>
+      </div>
+    </header>
+
+    <!-- Tab Navigation -->
+    <nav class="tab-nav" id="tab-nav">
+      <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview', this)">نظرة عامة</button>
+      <button class="tab-btn" data-tab="sales" onclick="switchTab('sales', this)">المبيعات</button>
+      <button class="tab-btn" data-tab="purchases" onclick="switchTab('purchases', this)">المشتريات</button>
+      <button class="tab-btn" data-tab="expenses" onclick="switchTab('expenses', this)">المصروفات</button>
+      <button class="tab-btn" data-tab="employees" onclick="switchTab('employees', this)">الموظفون</button>
+    </nav>
+
+    <!-- Tab Contents -->
+    <main class="main-content">
+
+      <!-- OVERVIEW TAB -->
+      <div id="tab-overview" class="tab-content active">
+        <div class="summary-cards" id="summary-cards">
+          <div class="card">
+            <div class="card__label">مبيعات اليوم</div>
+            <div class="card__value card__value--sales" id="card-sales">0.00 JD</div>
+          </div>
+          <div class="card">
+            <div class="card__label">مشتريات اليوم</div>
+            <div class="card__value card__value--danger" id="card-purchases">0.00 JD</div>
+          </div>
+          <div class="card">
+            <div class="card__label">مصروفات اليوم</div>
+            <div class="card__value card__value--danger" id="card-expenses">0.00 JD</div>
+          </div>
+          <div class="card">
+            <div class="card__label">إجمالي السلف</div>
+            <div class="card__value card__value--warning" id="card-loans">0.00 JD</div>
+          </div>
+        </div>
+
+        <div class="net-profit-section">
+          <div class="net-profit-label">صافي الربح اليوم</div>
+          <div class="net-profit-value" id="net-profit-value">0.00 JD</div>
+        </div>
+
+        <div class="section-title">آخر 10 إدخالات</div>
+        <div class="table-wrapper">
+          <table class="data-table" id="recent-table">
+            <thead>
+              <tr>
+                <th>التاريخ</th>
+                <th>النوع</th>
+                <th>الوصف</th>
+                <th>المبلغ</th>
+              </tr>
+            </thead>
+            <tbody id="recent-tbody">
+              <tr class="empty-row">
+                <td colspan="4">لا توجد إدخالات بعد</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- SALES TAB -->
+      <div id="tab-sales" class="tab-content">
+        <div class="section-title">إضافة مبيعة جديدة</div>
+        <form class="entry-form" id="sales-form" onsubmit="addSale(event)">
+          <div class="form-row">
+            <div class="form-group form-group--date" id="sale-date-group">
+              <label class="form-label" for="sale-date">التاريخ</label>
+              <input type="date" id="sale-date" class="form-input" required>
+              <span class="form-error" id="sale-date-error">يرجى إدخال تاريخ صحيح</span>
+            </div>
+            <div class="form-group form-group--desc" id="sale-desc-group">
+              <label class="form-label" for="sale-desc">الوصف</label>
+              <input type="text" id="sale-desc" class="form-input" placeholder="وصف المبيعة..." maxlength="200">
+              <span class="form-error" id="sale-desc-error">يجب أن يكون الاسم أكثر من حرفين</span>
+            </div>
+            <div class="form-group form-group--amount" id="sale-amount-group">
+              <label class="form-label" for="sale-amount">المبلغ (JD)</label>
+              <input type="number" id="sale-amount" class="form-input" placeholder="0.00" min="0.01" step="0.01">
+              <span class="form-error" id="sale-amount-error">يجب أن يكون المبلغ أكبر من صفر</span>
+            </div>
+            <div class="form-group form-group--btn">
+              <label class="form-label">&nbsp;</label>
+              <button type="submit" class="btn btn-primary" id="sale-submit-btn">إضافة</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="section-title">سجل المبيعات</div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>التاريخ</th>
+                <th>الوصف</th>
+                <th>المبلغ</th>
+                <th>حذف</th>
+              </tr>
+            </thead>
+            <tbody id="sales-tbody">
+              <tr class="empty-row">
+                <td colspan="4">لا توجد مبيعات مسجلة بعد</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- PURCHASES TAB -->
+      <div id="tab-purchases" class="tab-content">
+        <div class="section-title">إضافة مشترى جديد</div>
+        <form class="entry-form" id="purchases-form" onsubmit="addPurchase(event)">
+          <div class="form-row">
+            <div class="form-group form-group--date" id="purchase-date-group">
+              <label class="form-label" for="purchase-date">التاريخ</label>
+              <input type="date" id="purchase-date" class="form-input" required>
+              <span class="form-error" id="purchase-date-error">يرجى إدخال تاريخ صحيح</span>
+            </div>
+            <div class="form-group form-group--desc" id="purchase-desc-group">
+              <label class="form-label" for="purchase-desc">الوصف</label>
+              <input type="text" id="purchase-desc" class="form-input" placeholder="وصف المشترى..." maxlength="200">
+              <span class="form-error" id="purchase-desc-error">يجب أن يكون الاسم أكثر من حرفين</span>
+            </div>
+            <div class="form-group form-group--amount" id="purchase-amount-group">
+              <label class="form-label" for="purchase-amount">المبلغ (JD)</label>
+              <input type="number" id="purchase-amount" class="form-input" placeholder="0.00" min="0.01" step="0.01">
+              <span class="form-error" id="purchase-amount-error">يجب أن يكون المبلغ أكبر من صفر</span>
+            </div>
+            <div class="form-group form-group--btn">
+              <label class="form-label">&nbsp;</label>
+              <button type="submit" class="btn btn-primary" id="purchase-submit-btn">إضافة</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="section-title">سجل المشتريات</div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>التاريخ</th>
+                <th>الوصف</th>
+                <th>المبلغ</th>
+                <th>حذف</th>
+              </tr>
+            </thead>
+            <tbody id="purchases-tbody">
+              <tr class="empty-row">
+                <td colspan="4">لا توجد مشتريات مسجلة بعد</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- EXPENSES TAB -->
+      <div id="tab-expenses" class="tab-content">
+        <div class="section-title">إضافة مصروف جديد</div>
+        <form class="entry-form" id="expenses-form" onsubmit="addExpense(event)">
+          <div class="form-row">
+            <div class="form-group form-group--date" id="expense-date-group">
+              <label class="form-label" for="expense-date">التاريخ</label>
+              <input type="date" id="expense-date" class="form-input" required>
+              <span class="form-error" id="expense-date-error">يرجى إدخال تاريخ صحيح</span>
+            </div>
+            <div class="form-group form-group--desc" id="expense-desc-group">
+              <label class="form-label" for="expense-desc">الوصف</label>
+              <input type="text" id="expense-desc" class="form-input" placeholder="وصف المصروف..." maxlength="200">
+              <span class="form-error" id="expense-desc-error">يجب أن يكون الاسم أكثر من حرفين</span>
+            </div>
+            <div class="form-group form-group--amount" id="expense-amount-group">
+              <label class="form-label" for="expense-amount">المبلغ (JD)</label>
+              <input type="number" id="expense-amount" class="form-input" placeholder="0.00" min="0.01" step="0.01">
+              <span class="form-error" id="expense-amount-error">يجب أن يكون المبلغ أكبر من صفر</span>
+            </div>
+            <div class="form-group form-group--btn">
+              <label class="form-label">&nbsp;</label>
+              <button type="submit" class="btn btn-primary" id="expense-submit-btn">إضافة</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="section-title">سجل المصروفات</div>
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>التاريخ</th>
+                <th>الوصف</th>
+                <th>المبلغ</th>
+                <th>حذف</th>
+              </tr>
+            </thead>
+            <tbody id="expenses-tbody">
+              <tr class="empty-row">
+                <td colspan="4">لا توجد مصروفات مسجلة بعد</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- EMPLOYEES TAB -->
+      <div id="tab-employees" class="tab-content">
+        <div class="section-title">إضافة موظف جديد</div>
+        <form class="entry-form" id="employee-form" onsubmit="addEmployee(event)">
+          <div class="form-row">
+            <div class="form-group form-group--desc" id="emp-name-group">
+              <label class="form-label" for="emp-name">اسم الموظف</label>
+              <input type="text" id="emp-name" class="form-input" placeholder="اسم الموظف..." maxlength="100">
+              <span class="form-error" id="emp-name-error">يجب أن يكون الاسم أكثر من حرفين</span>
+            </div>
+            <div class="form-group form-group--amount" id="emp-salary-group">
+              <label class="form-label" for="emp-salary">الراتب الشهري (JD)</label>
+              <input type="number" id="emp-salary" class="form-input" placeholder="0.00" min="0.01" step="0.01">
+              <span class="form-error" id="emp-salary-error">يجب أن يكون المبلغ أكبر من صفر</span>
+            </div>
+            <div class="form-group form-group--btn">
+              <label class="form-label">&nbsp;</label>
+              <button type="submit" class="btn btn-primary" id="emp-submit-btn">إضافة موظف</button>
+            </div>
+          </div>
+        </form>
+
+        <div class="section-title">قائمة الموظفين</div>
+        <div id="employees-list">
+          <div class="empty-state">لا يوجد موظفون مسجلون بعد</div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Status Bar -->
+    <div id="status-bar" class="status-bar">
+      <span id="status-text"></span>
+    </div>
+
+  </section>
+
+  <!-- Employee Loan / Deduct Modal Template (cloned per employee) -->
+  <template id="employee-card-template">
+    <div class="employee-card" data-emp-id="">
+      <div class="employee-card__header">
+        <div class="employee-card__name"></div>
+        <button class="btn btn-danger btn-sm employee-remove-btn">حذف الموظف</button>
+      </div>
+      <div class="employee-card__details">
+        <span class="detail-item"><span class="detail-label">الراتب الشهري:</span> <span class="emp-salary-display"></span></span>
+        <span class="detail-item"><span class="detail-label">رصيد السلف:</span> <span class="emp-loan-display"></span></span>
+        <span class="detail-item"><span class="detail-label">آخر تحديث:</span> <span class="emp-updated-display"></span></span>
+      </div>
+      <div class="employee-card__actions">
+        <div class="emp-action-panel">
+          <div class="emp-action-panel__title">إعطاء سلفة</div>
+          <div class="form-row form-row--compact">
+            <div class="form-group form-group--amount" >
+              <input type="number" class="form-input loan-amount-input" placeholder="المبلغ (JD)" min="0.01" step="0.01">
+            </div>
+            <div class="form-group form-group--desc">
+              <input type="text" class="form-input loan-note-input" placeholder="ملاحظة (اختياري)" maxlength="100">
+            </div>
+            <div class="form-group form-group--btn">
+              <button type="button" class="btn btn-primary btn-sm loan-btn">تسجيل سلفة</button>
+            </div>
+          </div>
+          <span class="form-error loan-error" style="display:none;"></span>
+        </div>
+        <div class="emp-action-panel">
+          <div class="emp-action-panel__title">خصم من السلفة</div>
+          <div class="form-row form-row--compact">
+            <div class="form-group form-group--amount">
+              <input type="number" class="form-input deduct-amount-input" placeholder="المبلغ (JD)" min="0.01" step="0.01">
+            </div>
+            <div class="form-group form-group--btn">
+              <button type="button" class="btn btn-primary btn-sm deduct-btn">تسجيل خصم</button>
+            </div>
+          </div>
+          <span class="form-error deduct-error" style="display:none;"></span>
+        </div>
+      </div>
+    </div>
+  </template>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>

@@ -1,0 +1,925 @@
+/* ============================================================
+   SHOP MANAGER — ARABIC RTL STYLESHEET
+   Font: Cairo (Google Fonts)
+   ============================================================ */
+
+/* ---------- Design Tokens ---------- */
+:root {
+  --bg: #f7f7f7;
+  --surface: #ffffff;
+  --border: #d4d4d4;
+  --text: #1a1a1a;
+  --text-muted: #6b6b6b;
+  --primary: #1a56db;
+  --primary-hover: #1447b7;
+  --success: #166534;
+  --danger: #991b1b;
+  --warning: #92400e;
+  --radius: 8px;
+  --font: 'Cairo', sans-serif;
+}
+
+/* ---------- Reset & Base ---------- */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  direction: rtl;
+}
+
+html {
+  font-size: 16px;
+  direction: rtl;
+}
+
+body {
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.7;
+  color: var(--text);
+  background: var(--bg);
+  direction: rtl;
+  text-align: right;
+  min-height: 100vh;
+}
+
+input,
+button,
+textarea,
+select {
+  font-family: var(--font);
+}
+
+a {
+  color: var(--primary);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+code {
+  font-family: 'Courier New', Courier, monospace;
+  direction: ltr;
+  display: inline-block;
+}
+
+/* ---------- Page Visibility ---------- */
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+
+/* ============================================================
+   LOGIN PAGE
+   ============================================================ */
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--bg);
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px;
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+.login-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 8px;
+}
+
+.login-subtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+
+.branch-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.branch-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px 24px;
+  cursor: pointer;
+  margin-bottom: 12px;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+  text-align: center;
+}
+
+.branch-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: #f0f4ff;
+}
+
+.branch-btn:active {
+  transform: scale(0.98);
+}
+
+.branch-btn__name {
+  font-size: 20px;
+  font-weight: 700;
+  color: inherit;
+}
+
+.branch-btn__label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.branch-btn:hover .branch-btn__label {
+  color: var(--primary);
+  opacity: 0.75;
+}
+
+.login-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.login-error {
+  margin-top: 16px;
+  padding: 10px 14px;
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  border-radius: var(--radius);
+  color: var(--danger);
+  font-size: 14px;
+}
+
+/* ============================================================
+   SETUP PAGE
+   ============================================================ */
+.setup-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  background: var(--bg);
+}
+
+.setup-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 40px;
+  width: 100%;
+  max-width: 520px;
+}
+
+.setup-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 20px;
+}
+
+.setup-instructions {
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 24px;
+  line-height: 1.8;
+}
+
+.setup-instructions p {
+  margin-bottom: 8px;
+}
+
+.setup-instructions strong {
+  color: var(--text);
+}
+
+.setup-example {
+  margin-top: 14px;
+  background: #f3f4f6;
+  border-radius: var(--radius);
+  padding: 12px 16px;
+}
+
+.example-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.example-url {
+  font-size: 13px;
+  color: var(--text);
+  word-break: break-all;
+  direction: ltr;
+  display: block;
+}
+
+.example-highlight {
+  background: #dbeafe;
+  color: var(--primary);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+.setup-actions {
+  margin-top: 20px;
+}
+
+.setup-back {
+  display: inline-block;
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--text-muted);
+}
+
+.setup-back:hover {
+  color: var(--primary);
+}
+
+/* ============================================================
+   TOP BAR
+   ============================================================ */
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.topbar__right {
+  flex: 1;
+}
+
+.topbar__appname {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.topbar__center {
+  flex: 1;
+  text-align: center;
+}
+
+.topbar__branch {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.topbar__left {
+  flex: 1;
+  text-align: left;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.btn-logout {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 6px 14px;
+  border-radius: var(--radius);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  color: var(--text);
+  font-family: var(--font);
+}
+
+.btn-logout:hover {
+  border-color: var(--danger);
+  color: var(--danger);
+  background: #fef2f2;
+}
+
+/* ============================================================
+   TAB NAVIGATION
+   ============================================================ */
+.tab-nav {
+  display: flex;
+  flex-direction: row;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.tab-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.tab-btn {
+  flex-shrink: 0;
+  padding: 14px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font-family: var(--font);
+  white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.tab-btn:hover {
+  color: var(--text);
+}
+
+.tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+  font-weight: 600;
+}
+
+/* ============================================================
+   MAIN CONTENT
+   ============================================================ */
+.main-content {
+  max-width: 860px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+.tab-content {
+  display: none;
+}
+
+.tab-content.active {
+  display: block;
+}
+
+/* ============================================================
+   OVERVIEW — SUMMARY CARDS
+   ============================================================ */
+.summary-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-bottom: 24px;
+}
+
+@media (min-width: 600px) {
+  .summary-cards {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.card__label {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.card__value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  word-break: break-all;
+}
+
+.card__value--sales {
+  color: var(--success);
+}
+
+.card__value--danger {
+  color: var(--danger);
+}
+
+.card__value--warning {
+  color: var(--warning);
+}
+
+/* Net Profit */
+.net-profit-section {
+  text-align: center;
+  margin-bottom: 32px;
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.net-profit-label {
+  font-size: 15px;
+  color: var(--text-muted);
+  margin-bottom: 6px;
+}
+
+.net-profit-value {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--success);
+}
+
+.net-profit-value.negative {
+  color: var(--danger);
+}
+
+/* ============================================================
+   SECTION TITLE
+   ============================================================ */
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border);
+  margin-top: 24px;
+}
+
+.section-title:first-child {
+  margin-top: 0;
+}
+
+/* ============================================================
+   FORMS
+   ============================================================ */
+.entry-form {
+  margin-bottom: 8px;
+}
+
+.form-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+@media (min-width: 640px) {
+  .form-row {
+    flex-direction: row;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+}
+
+.form-row--compact {
+  flex-wrap: wrap;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-group--date {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.form-group--desc {
+  flex: 1 1 180px;
+}
+
+.form-group--amount {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+.form-group--btn {
+  flex: 0 0 auto;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .form-group--date {
+    width: 160px;
+  }
+
+  .form-group--amount {
+    width: 150px;
+  }
+
+  .form-group--btn {
+    width: auto;
+  }
+}
+
+.form-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text);
+  display: block;
+  margin-bottom: 4px;
+}
+
+.form-input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+  font-size: 15px;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--surface);
+  text-align: right;
+  direction: rtl;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.form-input:focus {
+  border-color: var(--primary);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(26, 86, 219, 0.1);
+}
+
+.form-input::placeholder {
+  color: #b0b0b0;
+}
+
+/* Input with error */
+.form-group.has-error .form-input {
+  border-color: var(--danger);
+}
+
+.form-group.has-error .form-input:focus {
+  box-shadow: 0 0 0 3px rgba(153, 27, 27, 0.1);
+}
+
+.form-error {
+  font-size: 13px;
+  color: var(--danger);
+  margin-top: 4px;
+  display: none;
+}
+
+.form-group.has-error .form-error {
+  display: block;
+}
+
+/* Date inputs: override browser direction */
+input[type="date"] {
+  direction: ltr;
+  text-align: right;
+}
+
+/* Number inputs: direction */
+input[type="number"] {
+  direction: ltr;
+  text-align: right;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 22px;
+  border-radius: var(--radius);
+  font-size: 15px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #ffffff;
+  border: 1px solid var(--primary);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+.btn-danger {
+  background: var(--surface);
+  color: var(--danger);
+  border: 1px solid var(--danger);
+}
+
+.btn-danger:hover {
+  background: #fef2f2;
+}
+
+.btn-sm {
+  padding: 7px 14px;
+  font-size: 13px;
+}
+
+.btn:disabled,
+.btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   TABLES
+   ============================================================ */
+.table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 0;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 420px;
+}
+
+.data-table thead tr {
+  background: #f3f4f6;
+}
+
+.data-table thead th {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: right;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid var(--border);
+}
+
+.data-table tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.data-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.data-table tbody td {
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--text);
+  text-align: right;
+}
+
+.amount-positive {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.amount-negative {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.empty-row td {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 24px;
+}
+
+/* Type badge in overview table */
+.type-badge {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.type-badge--sales {
+  background: #dcfce7;
+  color: var(--success);
+}
+
+.type-badge--purchases {
+  background: #fee2e2;
+  color: var(--danger);
+}
+
+.type-badge--expenses {
+  background: #fef3c7;
+  color: var(--warning);
+}
+
+.type-badge--loan {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+/* Delete button in table */
+.delete-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  font-size: 13px;
+  font-family: var(--font);
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.delete-btn:hover {
+  background: #fef2f2;
+}
+
+/* ============================================================
+   EMPLOYEE CARDS
+   ============================================================ */
+.employee-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.employee-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.employee-card__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.employee-card__details {
+  display: flex;
+  gap: 24px;
+  font-size: 14px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+  gap: 12px 24px;
+}
+
+.detail-label {
+  font-weight: 600;
+  color: var(--text);
+}
+
+.employee-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.emp-action-panel {
+  background: #f9fafb;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px;
+}
+
+.emp-action-panel__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+.empty-state {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 14px;
+  padding: 40px 24px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+/* ============================================================
+   ALERT
+   ============================================================ */
+.alert {
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.alert-danger {
+  background: #fef2f2;
+  border: 1px solid #fca5a5;
+  color: var(--danger);
+}
+
+/* ============================================================
+   STATUS BAR
+   ============================================================ */
+.status-bar {
+  position: fixed;
+  bottom: 0;
+  right: 0;
+  left: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 8px 20px;
+  font-size: 13px;
+  text-align: center;
+  z-index: 200;
+  min-height: 36px;
+}
+
+#status-text {
+  color: var(--text-muted);
+}
+
+#status-text.saving {
+  color: var(--text-muted);
+}
+
+#status-text.saved {
+  color: var(--success);
+}
+
+#status-text.error {
+  color: var(--danger);
+}
+
+/* ============================================================
+   MOBILE RESPONSIVE
+   ============================================================ */
+@media (max-width: 480px) {
+  .topbar {
+    padding: 10px 14px;
+  }
+
+  .topbar__appname {
+    font-size: 14px;
+  }
+
+  .topbar__branch {
+    font-size: 13px;
+  }
+
+  .main-content {
+    padding: 16px 12px 80px;
+  }
+
+  .login-card {
+    padding: 28px 20px;
+  }
+
+  .setup-card {
+    padding: 24px 18px;
+  }
+
+  .card__value {
+    font-size: 18px;
+  }
+
+  .net-profit-value {
+    font-size: 26px;
+  }
+
+  .employee-card__details {
+    flex-direction: column;
+    gap: 4px;
+  }
+}
