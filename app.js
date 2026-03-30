@@ -1,36 +1,20 @@
 /**
  * app.js — Main application logic
- * Entry point: loaded as <script type="module"> from index.html
+ * No Google login required. Branch click → dashboard instantly.
  */
 
-import { initAuth, signIn, signOut as authSignOut } from './auth.js';
 import {
-  initSpreadsheet,
-  appendRow,
-  updateRow,
-  clearRow,
-  syncAllData,
+  BRANCH_KEYS, SCRIPT_URL,
+  initSpreadsheet, appendRow, updateRow, clearRow, syncAllData,
 } from './sheets.js';
 
 /* ─────────────────────────────────────────────
    Branch Configuration
 ───────────────────────────────────────────── */
 const BRANCHES = {
-  'حسن': {
-    nameAr: 'حسن',
-    spreadsheetKey: 'spreadsheetId_hasan',
-    backupKey: 'backup_حسن',
-  },
-  'أحمد': {
-    nameAr: 'أحمد',
-    spreadsheetKey: 'spreadsheetId_ahmad',
-    backupKey: 'backup_أحمد',
-  },
-  'المحل': {
-    nameAr: 'المحل',
-    spreadsheetKey: 'spreadsheetId_almahall',
-    backupKey: 'backup_المحل',
-  },
+  'حسن':   { nameAr: 'حسن',   backupKey: 'backup_حسن'   },
+  'أحمد':  { nameAr: 'أحمد',  backupKey: 'backup_أحمد'  },
+  'المحل': { nameAr: 'المحل', backupKey: 'backup_المحل' },
 };
 
 /* ─────────────────────────────────────────────
@@ -38,19 +22,19 @@ const BRANCHES = {
 ───────────────────────────────────────────── */
 let state = {
   currentBranch: null,
-  spreadsheetId: null,
-  sales: [],
-  purchases: [],
-  expenses: [],
-  employees: [],
+  branchKey:     null,
+  sales:         [],
+  purchases:     [],
+  expenses:      [],
+  employees:     [],
 };
 
 /* ─────────────────────────────────────────────
    Arabic Utilities
 ───────────────────────────────────────────── */
 const MONTHS_AR = [
-  'يناير', 'فبراير', 'مارس', 'أبريل', 'مايو', 'يونيو',
-  'يوليو', 'أغسطس', 'سبتمبر', 'أكتوبر', 'نوفمبر', 'ديسمبر',
+  'يناير','فبراير','مارس','أبريل','مايو','يونيو',
+  'يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر',
 ];
 
 function formatDate(str) {
@@ -58,13 +42,14 @@ function formatDate(str) {
   const parts = str.split('-');
   if (parts.length !== 3) return str;
   const [y, m, d] = parts;
-  const month = MONTHS_AR[parseInt(m, 10) - 1] || m;
-  return `${parseInt(d, 10)} ${month} ${y}`;
+  return `${parseInt(d, 10)} ${MONTHS_AR[parseInt(m, 10) - 1] || m} ${y}`;
 }
 
 function formatAmount(n) {
   const num = parseFloat(n) || 0;
-  return num.toLocaleString('ar-EG', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' JD';
+  return num.toLocaleString('ar-EG', {
+    minimumFractionDigits: 2, maximumFractionDigits: 2,
+  }) + ' JD';
 }
 
 function generateId() {
@@ -73,10 +58,7 @@ function generateId() {
 
 function getTodayString() {
   const now = new Date();
-  const y = now.getFullYear();
-  const m = String(now.getMonth() + 1).padStart(2, '0');
-  const d = String(now.getDate()).padStart(2, '0');
-  return `${y}-${m}-${d}`;
+  return `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
 }
 
 /* ─────────────────────────────────────────────
@@ -93,16 +75,10 @@ function setStatus(type) {
     el.textContent = '⟳ جاري الحفظ...';
   } else if (type === 'saved') {
     el.textContent = '✓ تم حفظ البيانات';
-    statusTimeout = setTimeout(() => {
-      el.textContent = '';
-      el.className = '';
-    }, 3000);
+    statusTimeout = setTimeout(() => { el.textContent = ''; el.className = ''; }, 3000);
   } else if (type === 'error') {
     el.textContent = '⚠ حدث خطأ أثناء الحفظ';
-    statusTimeout = setTimeout(() => {
-      el.textContent = '';
-      el.className = '';
-    }, 5000);
+    statusTimeout = setTimeout(() => { el.textContent = ''; el.className = ''; }, 5000);
   }
 }
 
@@ -114,8 +90,7 @@ function setStatusOffline() {
   el.textContent = '⚠ لا يوجد اتصال — تم الحفظ محلياً';
 }
 
-// Expose to sheets.js via window
-window.__setStatus = setStatus;
+window.__setStatus        = setStatus;
 window.__setStatusOffline = setStatusOffline;
 
 /* ─────────────────────────────────────────────
@@ -126,14 +101,10 @@ function saveLocalBackup() {
   const key = BRANCHES[state.currentBranch].backupKey;
   try {
     localStorage.setItem(key, JSON.stringify({
-      sales: state.sales,
-      purchases: state.purchases,
-      expenses: state.expenses,
-      employees: state.employees,
+      sales: state.sales, purchases: state.purchases,
+      expenses: state.expenses, employees: state.employees,
     }));
-  } catch (e) {
-    console.warn('[app] Could not save local backup:', e);
-  }
+  } catch (e) { /* ignore */ }
 }
 
 function loadLocalBackup() {
@@ -148,52 +119,35 @@ function loadLocalBackup() {
     if (data.expenses)  state.expenses  = data.expenses;
     if (data.employees) state.employees = data.employees;
     renderAll();
-  } catch (e) {
-    console.warn('[app] Could not load local backup:', e);
-  }
+  } catch (e) { /* ignore */ }
 }
 
 /* ─────────────────────────────────────────────
-   Page Navigation
+   Page & Tab Navigation
 ───────────────────────────────────────────── */
 function showPage(pageId) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  const target = document.getElementById(`page-${pageId}`);
-  if (target) target.classList.add('active');
+  const t = document.getElementById(`page-${pageId}`);
+  if (t) t.classList.add('active');
 }
 
-/* ─────────────────────────────────────────────
-   Tab Switching
-───────────────────────────────────────────── */
 function switchTab(tabId, btnEl) {
-  // Hide all tab contents
   document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-  // Deactivate all tab buttons
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  // Show selected
-  const content = document.getElementById(`tab-${tabId}`);
-  if (content) content.classList.add('active');
+  document.querySelectorAll('.tab-btn').forEach(b  => b.classList.remove('active'));
+  const c = document.getElementById(`tab-${tabId}`);
+  if (c) c.classList.add('active');
   if (btnEl) btnEl.classList.add('active');
 }
-
-// Expose to inline onclick
 window.switchTab = switchTab;
 
 /* ─────────────────────────────────────────────
    Form Validation
 ───────────────────────────────────────────── */
-/**
- * Validate a single input field.
- * rules: { required, minLength, isPositiveNumber, isDate }
- * errorSpanId: ID of the <span> showing the error message
- * groupId: ID of the parent .form-group div
- * Returns true if valid.
- */
 function validateField(inputEl, rules, groupId, errorSpanId, customMessage) {
-  const group = document.getElementById(groupId);
+  const group     = document.getElementById(groupId);
   const errorSpan = document.getElementById(errorSpanId);
-  const value = inputEl.value.trim();
-  let errorMsg = '';
+  const value     = inputEl.value.trim();
+  let errorMsg    = '';
 
   if (rules.required && value === '') {
     errorMsg = customMessage || 'هذا الحقل مطلوب';
@@ -201,202 +155,77 @@ function validateField(inputEl, rules, groupId, errorSpanId, customMessage) {
     errorMsg = customMessage || 'يجب أن يكون الاسم أكثر من حرفين';
   } else if (rules.isPositiveNumber) {
     const num = parseFloat(value);
-    if (isNaN(num) || num <= 0) {
-      errorMsg = customMessage || 'يجب أن يكون المبلغ أكبر من صفر';
-    }
+    if (isNaN(num) || num <= 0) errorMsg = customMessage || 'يجب أن يكون المبلغ أكبر من صفر';
   } else if (rules.isDate && value === '') {
     errorMsg = customMessage || 'يرجى إدخال تاريخ صحيح';
   }
 
   if (errorMsg) {
-    if (group) group.classList.add('has-error');
-    if (errorSpan) {
-      errorSpan.textContent = errorMsg;
-      errorSpan.style.display = 'block';
-    }
+    if (group)     group.classList.add('has-error');
+    if (errorSpan) { errorSpan.textContent = errorMsg; errorSpan.style.display = 'block'; }
     return false;
-  } else {
-    if (group) group.classList.remove('has-error');
-    if (errorSpan) {
-      errorSpan.textContent = '';
-      errorSpan.style.display = 'none';
-    }
-    return true;
   }
-}
-
-function clearFieldError(groupId, errorSpanId) {
-  const group = document.getElementById(groupId);
-  const errorSpan = document.getElementById(errorSpanId);
-  if (group) group.classList.remove('has-error');
-  if (errorSpan) {
-    errorSpan.textContent = '';
-    errorSpan.style.display = 'none';
-  }
+  if (group)     group.classList.remove('has-error');
+  if (errorSpan) { errorSpan.textContent = ''; errorSpan.style.display = 'none'; }
+  return true;
 }
 
 /* ─────────────────────────────────────────────
-   Login Flow
+   LOGIN — No Google auth. Just pick a branch.
 ───────────────────────────────────────────── */
-function selectBranch(branchName) {
-  state.currentBranch = branchName;
-
-  // Hide any previous login error
-  const errEl = document.getElementById('login-error');
-  if (errEl) errEl.style.display = 'none';
-
-  // Trigger Google OAuth
-  signIn((success, error) => {
-    if (!success) {
-      if (errEl) {
-        if (error === 'client_id_not_set') {
-          errEl.textContent = '⚠ لم يتم إعداد الـ Client ID بعد. افتح ملف auth.js وضع الـ Client ID الخاص بك.';
-        } else if (error === 'popup_closed_by_user' || error === 'access_denied') {
-          errEl.textContent = 'تم إلغاء تسجيل الدخول. اضغط مرة أخرى وأكمل خطوات Google.';
-        } else {
-          errEl.textContent = 'فشل تسجيل الدخول. تأكد من إعداد الـ Client ID ورابط GitHub Pages في Google Cloud.';
-        }
-        errEl.style.display = 'block';
-      }
-      state.currentBranch = null;
-      return;
-    }
-    onAuthSuccess();
-  });
-}
-
-// Expose to inline onclick
-window.selectBranch = selectBranch;
-
-async function onAuthSuccess() {
-  const branchConfig = BRANCHES[state.currentBranch];
-  const savedId = localStorage.getItem(branchConfig.spreadsheetKey);
-
-  // Update top bar branch name
-  const topbarBranch = document.getElementById('topbar-branch');
-  if (topbarBranch) topbarBranch.textContent = `فرع: ${state.currentBranch}`;
-
-  if (!savedId) {
-    // First time for this branch — show setup
-    const setupTitle = document.getElementById('setup-title');
-    if (setupTitle) setupTitle.textContent = `إعداد جداول البيانات — فرع ${state.currentBranch}`;
-    showPage('setup');
-  } else {
-    state.spreadsheetId = savedId;
-    showPage('app');
-    // Reset to overview tab
-    const overviewBtn = document.querySelector('.tab-btn[data-tab="overview"]');
-    switchTab('overview', overviewBtn);
-    // Show local data immediately
-    loadLocalBackup();
-    renderAll();
-    // Init sheets (ensure structure exists) then sync
-    const ok = await initSpreadsheet(state.spreadsheetId);
-    if (ok) {
-      await loadFromSheets();
-    }
-  }
-}
-
-/* ─────────────────────────────────────────────
-   Setup Page
-───────────────────────────────────────────── */
-async function onSetupSubmit() {
-  const input = document.getElementById('spreadsheet-id-input');
-  const errEl = document.getElementById('setup-general-error');
-  const btn = document.getElementById('setup-submit-btn');
-
-  if (!input) return;
-
-  // Clear errors
-  if (errEl) errEl.style.display = 'none';
-  clearFieldError('setup-id-group', 'setup-id-error');
-
-  const rawValue = input.value.trim();
-  if (!rawValue) {
-    const idErrEl = document.getElementById('setup-id-error');
-    const idGroup = document.getElementById('setup-id-group');
-    if (idGroup) idGroup.classList.add('has-error');
-    if (idErrEl) {
-      idErrEl.textContent = 'يرجى إدخال رمز جدول البيانات';
-      idErrEl.style.display = 'block';
+async function selectBranch(branchName) {
+  // Guard: Apps Script URL not set yet
+  if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
+    const errEl = document.getElementById('login-error');
+    if (errEl) {
+      errEl.textContent = '⚠ يرجى إضافة رابط Apps Script في ملف sheets.js أولاً.';
+      errEl.style.display = 'block';
     }
     return;
   }
 
-  // Extract spreadsheet ID if user pasted a full URL
-  const id = extractSpreadsheetId(rawValue);
+  state.currentBranch = branchName;
+  state.branchKey     = BRANCH_KEYS[branchName];
 
-  btn.disabled = true;
-  btn.textContent = 'جاري التحقق...';
+  // Update top bar
+  const topbarBranch = document.getElementById('topbar-branch');
+  if (topbarBranch) topbarBranch.textContent = `فرع: ${branchName}`;
 
-  const ok = await initSpreadsheet(id);
+  showPage('app');
+  const overviewBtn = document.querySelector('.tab-btn[data-tab="overview"]');
+  switchTab('overview', overviewBtn);
 
-  btn.disabled = false;
-  btn.textContent = 'حفظ والمتابعة';
+  // Show cached data instantly
+  loadLocalBackup();
+  renderAll();
 
-  if (ok) {
-    localStorage.setItem(BRANCHES[state.currentBranch].spreadsheetKey, id);
-    state.spreadsheetId = id;
-    // Update top bar
-    const topbarBranch = document.getElementById('topbar-branch');
-    if (topbarBranch) topbarBranch.textContent = `فرع: ${state.currentBranch}`;
-    showPage('app');
-    const overviewBtn = document.querySelector('.tab-btn[data-tab="overview"]');
-    switchTab('overview', overviewBtn);
-    await loadFromSheets();
-  } else {
-    if (errEl) {
-      errEl.textContent = 'لم يتم العثور على جدول البيانات. تأكد من صحة الرمز وأن لديك صلاحية الوصول إليه.';
-      errEl.style.display = 'block';
-    }
-  }
+  // Init sheet structure then pull latest from Sheets
+  await initSpreadsheet(state.branchKey);
+  await loadFromSheets();
 }
-
-/** Extract spreadsheet ID from a URL or return the value as-is */
-function extractSpreadsheetId(value) {
-  // Try to extract from full Google Sheets URL
-  const match = value.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
-  if (match) return match[1];
-  return value;
-}
-
-// Expose to inline onclick
-window.onSetupSubmit = onSetupSubmit;
+window.selectBranch = selectBranch;
 
 /* ─────────────────────────────────────────────
-   Logout
+   Logout — back to branch selection
 ───────────────────────────────────────────── */
 function logout() {
   state.currentBranch = null;
-  state.spreadsheetId = null;
-  state.sales = [];
-  state.purchases = [];
-  state.expenses = [];
-  state.employees = [];
-  authSignOut();
+  state.branchKey     = null;
+  state.sales = []; state.purchases = []; state.expenses = []; state.employees = [];
   showPage('login');
-  // Clear the setup input for next time
-  const setupInput = document.getElementById('spreadsheet-id-input');
-  if (setupInput) setupInput.value = '';
 }
-
-// Expose to inline onclick
 window.logout = logout;
 
 /* ─────────────────────────────────────────────
    Load from Google Sheets
 ───────────────────────────────────────────── */
 async function loadFromSheets() {
-  if (!state.spreadsheetId) return;
-  const data = await syncAllData(state.spreadsheetId);
+  const data = await syncAllData(state.branchKey);
   if (!data) return;
-
   state.sales     = data.sales     || [];
   state.purchases = data.purchases || [];
   state.expenses  = data.expenses  || [];
   state.employees = data.employees || [];
-
   saveLocalBackup();
   renderAll();
 }
@@ -435,34 +264,28 @@ function renderOverview() {
     netEl.classList.toggle('negative', netProfit < 0);
   }
 
-  // Recent entries — last 10 across all categories
   const combined = [
-    ...state.sales.map(s => ({ ...s, type: 'sales' })),
+    ...state.sales.map(s     => ({ ...s, type: 'sales' })),
     ...state.purchases.map(s => ({ ...s, type: 'purchases' })),
-    ...state.expenses.map(s => ({ ...s, type: 'expenses' })),
-  ];
-  combined.sort((a, b) => (b.id > a.id ? 1 : -1));
-  const recent = combined.slice(0, 10);
+    ...state.expenses.map(s  => ({ ...s, type: 'expenses' })),
+  ].sort((a, b) => (b.id > a.id ? 1 : -1)).slice(0, 10);
 
   const tbody = document.getElementById('recent-tbody');
   if (!tbody) return;
-
-  if (recent.length === 0) {
+  if (combined.length === 0) {
     tbody.innerHTML = '<tr class="empty-row"><td colspan="4">لا توجد إدخالات بعد</td></tr>';
     return;
   }
-
-  tbody.innerHTML = recent.map(entry => {
-    const typeBadge = {
+  tbody.innerHTML = combined.map(entry => {
+    const badge = {
       sales:     '<span class="type-badge type-badge--sales">مبيعات</span>',
       purchases: '<span class="type-badge type-badge--purchases">مشتريات</span>',
       expenses:  '<span class="type-badge type-badge--expenses">مصروفات</span>',
     }[entry.type] || '';
-
     const amtClass = entry.type === 'sales' ? 'amount-positive' : 'amount-negative';
     return `<tr>
       <td>${formatDate(entry.date)}</td>
-      <td>${typeBadge}</td>
+      <td>${badge}</td>
       <td>${escapeHtml(entry.description) || '—'}</td>
       <td class="${amtClass}">${formatAmount(entry.amount)}</td>
     </tr>`;
@@ -474,77 +297,52 @@ function renderOverview() {
 ───────────────────────────────────────────── */
 async function addSale(event) {
   event.preventDefault();
-
   const dateEl   = document.getElementById('sale-date');
   const descEl   = document.getElementById('sale-desc');
   const amountEl = document.getElementById('sale-amount');
   const btn      = document.getElementById('sale-submit-btn');
 
-  // Validate
   const v1 = validateField(dateEl,   { isDate: true, required: true }, 'sale-date-group',   'sale-date-error');
-  const v2 = validateField(descEl,   { minLength: 2 },                  'sale-desc-group',   'sale-desc-error');
   const v3 = validateField(amountEl, { isPositiveNumber: true },        'sale-amount-group', 'sale-amount-error');
-  if (!v1 || !v3) return; // date and amount required; description optional
+  if (!v1 || !v3) return;
 
-  const entry = {
-    id:          generateId(),
-    date:        dateEl.value,
-    description: descEl.value.trim(),
-    amount:      parseFloat(amountEl.value),
-  };
-
+  const entry = { id: generateId(), date: dateEl.value, description: descEl.value.trim(), amount: parseFloat(amountEl.value) };
   btn.disabled = true;
   state.sales.push(entry);
-  saveLocalBackup();
-  renderSales();
-  renderOverview();
-
-  // Reset form (keep today's date)
-  descEl.value   = '';
-  amountEl.value = '';
-
-  await appendRow(state.spreadsheetId, 'Sales', [entry.id, entry.date, entry.description, entry.amount]);
+  saveLocalBackup(); renderSales(); renderOverview();
+  descEl.value = ''; amountEl.value = '';
+  await appendRow(state.branchKey, 'Sales', [entry.id, entry.date, entry.description, entry.amount]);
   btn.disabled = false;
 }
+window.addSale = addSale;
 
 async function deleteSale(id) {
   state.sales = state.sales.filter(s => s.id !== id);
-  saveLocalBackup();
-  renderSales();
-  renderOverview();
-  await clearRow(state.spreadsheetId, 'Sales', id);
+  saveLocalBackup(); renderSales(); renderOverview();
+  await clearRow(state.branchKey, 'Sales', id);
 }
+window.deleteSale = deleteSale;
 
 function renderSales() {
   const tbody = document.getElementById('sales-tbody');
   if (!tbody) return;
-
   if (state.sales.length === 0) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">لا توجد مبيعات مسجلة بعد</td></tr>';
-    return;
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">لا توجد مبيعات مسجلة بعد</td></tr>'; return;
   }
-
-  const sorted = [...state.sales].sort((a, b) => (b.id > a.id ? 1 : -1));
-  tbody.innerHTML = sorted.map(s => `
+  tbody.innerHTML = [...state.sales].sort((a, b) => (b.id > a.id ? 1 : -1)).map(s => `
     <tr>
       <td>${formatDate(s.date)}</td>
       <td>${escapeHtml(s.description) || '—'}</td>
       <td class="amount-positive">${formatAmount(s.amount)}</td>
       <td><button class="delete-btn" onclick="deleteSale('${s.id}')">حذف</button></td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
 }
-
-// Expose
-window.addSale = addSale;
-window.deleteSale = deleteSale;
 
 /* ─────────────────────────────────────────────
    PURCHASES TAB
 ───────────────────────────────────────────── */
 async function addPurchase(event) {
   event.preventDefault();
-
   const dateEl   = document.getElementById('purchase-date');
   const descEl   = document.getElementById('purchase-desc');
   const amountEl = document.getElementById('purchase-amount');
@@ -554,63 +352,43 @@ async function addPurchase(event) {
   const v3 = validateField(amountEl, { isPositiveNumber: true },        'purchase-amount-group', 'purchase-amount-error');
   if (!v1 || !v3) return;
 
-  const entry = {
-    id:          generateId(),
-    date:        dateEl.value,
-    description: descEl.value.trim(),
-    amount:      parseFloat(amountEl.value),
-  };
-
+  const entry = { id: generateId(), date: dateEl.value, description: descEl.value.trim(), amount: parseFloat(amountEl.value) };
   btn.disabled = true;
   state.purchases.push(entry);
-  saveLocalBackup();
-  renderPurchases();
-  renderOverview();
-
-  descEl.value   = '';
-  amountEl.value = '';
-
-  await appendRow(state.spreadsheetId, 'Purchases', [entry.id, entry.date, entry.description, entry.amount]);
+  saveLocalBackup(); renderPurchases(); renderOverview();
+  descEl.value = ''; amountEl.value = '';
+  await appendRow(state.branchKey, 'Purchases', [entry.id, entry.date, entry.description, entry.amount]);
   btn.disabled = false;
 }
+window.addPurchase = addPurchase;
 
 async function deletePurchase(id) {
   state.purchases = state.purchases.filter(s => s.id !== id);
-  saveLocalBackup();
-  renderPurchases();
-  renderOverview();
-  await clearRow(state.spreadsheetId, 'Purchases', id);
+  saveLocalBackup(); renderPurchases(); renderOverview();
+  await clearRow(state.branchKey, 'Purchases', id);
 }
+window.deletePurchase = deletePurchase;
 
 function renderPurchases() {
   const tbody = document.getElementById('purchases-tbody');
   if (!tbody) return;
-
   if (state.purchases.length === 0) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">لا توجد مشتريات مسجلة بعد</td></tr>';
-    return;
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">لا توجد مشتريات مسجلة بعد</td></tr>'; return;
   }
-
-  const sorted = [...state.purchases].sort((a, b) => (b.id > a.id ? 1 : -1));
-  tbody.innerHTML = sorted.map(s => `
+  tbody.innerHTML = [...state.purchases].sort((a, b) => (b.id > a.id ? 1 : -1)).map(s => `
     <tr>
       <td>${formatDate(s.date)}</td>
       <td>${escapeHtml(s.description) || '—'}</td>
       <td class="amount-negative">${formatAmount(s.amount)}</td>
       <td><button class="delete-btn" onclick="deletePurchase('${s.id}')">حذف</button></td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
 }
-
-window.addPurchase = addPurchase;
-window.deletePurchase = deletePurchase;
 
 /* ─────────────────────────────────────────────
    EXPENSES TAB
 ───────────────────────────────────────────── */
 async function addExpense(event) {
   event.preventDefault();
-
   const dateEl   = document.getElementById('expense-date');
   const descEl   = document.getElementById('expense-desc');
   const amountEl = document.getElementById('expense-amount');
@@ -620,63 +398,43 @@ async function addExpense(event) {
   const v3 = validateField(amountEl, { isPositiveNumber: true },        'expense-amount-group', 'expense-amount-error');
   if (!v1 || !v3) return;
 
-  const entry = {
-    id:          generateId(),
-    date:        dateEl.value,
-    description: descEl.value.trim(),
-    amount:      parseFloat(amountEl.value),
-  };
-
+  const entry = { id: generateId(), date: dateEl.value, description: descEl.value.trim(), amount: parseFloat(amountEl.value) };
   btn.disabled = true;
   state.expenses.push(entry);
-  saveLocalBackup();
-  renderExpenses();
-  renderOverview();
-
-  descEl.value   = '';
-  amountEl.value = '';
-
-  await appendRow(state.spreadsheetId, 'Expenses', [entry.id, entry.date, entry.description, entry.amount]);
+  saveLocalBackup(); renderExpenses(); renderOverview();
+  descEl.value = ''; amountEl.value = '';
+  await appendRow(state.branchKey, 'Expenses', [entry.id, entry.date, entry.description, entry.amount]);
   btn.disabled = false;
 }
+window.addExpense = addExpense;
 
 async function deleteExpense(id) {
   state.expenses = state.expenses.filter(s => s.id !== id);
-  saveLocalBackup();
-  renderExpenses();
-  renderOverview();
-  await clearRow(state.spreadsheetId, 'Expenses', id);
+  saveLocalBackup(); renderExpenses(); renderOverview();
+  await clearRow(state.branchKey, 'Expenses', id);
 }
+window.deleteExpense = deleteExpense;
 
 function renderExpenses() {
   const tbody = document.getElementById('expenses-tbody');
   if (!tbody) return;
-
   if (state.expenses.length === 0) {
-    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">لا توجد مصروفات مسجلة بعد</td></tr>';
-    return;
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="4">لا توجد مصروفات مسجلة بعد</td></tr>'; return;
   }
-
-  const sorted = [...state.expenses].sort((a, b) => (b.id > a.id ? 1 : -1));
-  tbody.innerHTML = sorted.map(s => `
+  tbody.innerHTML = [...state.expenses].sort((a, b) => (b.id > a.id ? 1 : -1)).map(s => `
     <tr>
       <td>${formatDate(s.date)}</td>
       <td>${escapeHtml(s.description) || '—'}</td>
       <td class="amount-negative">${formatAmount(s.amount)}</td>
       <td><button class="delete-btn" onclick="deleteExpense('${s.id}')">حذف</button></td>
-    </tr>
-  `).join('');
+    </tr>`).join('');
 }
-
-window.addExpense = addExpense;
-window.deleteExpense = deleteExpense;
 
 /* ─────────────────────────────────────────────
    EMPLOYEES TAB
 ───────────────────────────────────────────── */
 async function addEmployee(event) {
   event.preventDefault();
-
   const nameEl   = document.getElementById('emp-name');
   const salaryEl = document.getElementById('emp-salary');
   const btn      = document.getElementById('emp-submit-btn');
@@ -686,170 +444,102 @@ async function addEmployee(event) {
   if (!v1 || !v2) return;
 
   const today = getTodayString();
-  const emp = {
-    id:          generateId(),
-    name:        nameEl.value.trim(),
-    salary:      parseFloat(salaryEl.value),
-    loanBalance: 0,
-    lastUpdated: today,
-  };
-
+  const emp   = { id: generateId(), name: nameEl.value.trim(), salary: parseFloat(salaryEl.value), loanBalance: 0, lastUpdated: today };
   btn.disabled = true;
   state.employees.push(emp);
-  saveLocalBackup();
-  renderEmployees();
-
-  nameEl.value   = '';
-  salaryEl.value = '';
-
-  await appendRow(state.spreadsheetId, 'Employees', [
-    emp.id, emp.name, emp.salary, emp.loanBalance, emp.lastUpdated,
-  ]);
+  saveLocalBackup(); renderEmployees();
+  nameEl.value = ''; salaryEl.value = '';
+  await appendRow(state.branchKey, 'Employees', [emp.id, emp.name, emp.salary, emp.loanBalance, emp.lastUpdated]);
   btn.disabled = false;
 }
+window.addEmployee = addEmployee;
 
 async function giveLoan(employeeId, amount, note) {
   const emp = state.employees.find(e => e.id === employeeId);
   if (!emp) return;
-
   emp.loanBalance += amount;
   emp.lastUpdated  = getTodayString();
-  saveLocalBackup();
-  renderEmployees();
-  renderOverview();
-
-  // Update employee row
-  await updateRow(state.spreadsheetId, 'Employees', employeeId, [
-    emp.id, emp.name, emp.salary, emp.loanBalance, emp.lastUpdated,
-  ]);
-
-  // Also record as expense
-  const expenseDesc = `سلفة موظف — ${emp.name}${note ? ' — ' + note : ''}`;
-  const expEntry = {
-    id:          generateId(),
-    date:        emp.lastUpdated,
-    description: expenseDesc,
-    amount:      amount,
-  };
+  saveLocalBackup(); renderEmployees(); renderOverview();
+  await updateRow(state.branchKey, 'Employees', employeeId,
+    [emp.id, emp.name, emp.salary, emp.loanBalance, emp.lastUpdated]);
+  const expEntry = { id: generateId(), date: emp.lastUpdated,
+    description: `سلفة موظف — ${emp.name}${note ? ' — ' + note : ''}`, amount };
   state.expenses.push(expEntry);
-  saveLocalBackup();
-  renderExpenses();
-
-  await appendRow(state.spreadsheetId, 'Expenses', [
-    expEntry.id, expEntry.date, expEntry.description, expEntry.amount,
-  ]);
+  saveLocalBackup(); renderExpenses();
+  await appendRow(state.branchKey, 'Expenses', [expEntry.id, expEntry.date, expEntry.description, expEntry.amount]);
 }
 
 async function deductLoan(employeeId, amount) {
   const emp = state.employees.find(e => e.id === employeeId);
-  if (!emp) return false;
-
-  if (amount > emp.loanBalance) {
-    return false; // validation done by caller
-  }
-
+  if (!emp || amount > emp.loanBalance) return false;
   emp.loanBalance -= amount;
   emp.lastUpdated  = getTodayString();
-  saveLocalBackup();
-  renderEmployees();
-  renderOverview();
-
-  await updateRow(state.spreadsheetId, 'Employees', employeeId, [
-    emp.id, emp.name, emp.salary, emp.loanBalance, emp.lastUpdated,
-  ]);
+  saveLocalBackup(); renderEmployees(); renderOverview();
+  await updateRow(state.branchKey, 'Employees', employeeId,
+    [emp.id, emp.name, emp.salary, emp.loanBalance, emp.lastUpdated]);
   return true;
 }
 
 async function removeEmployee(employeeId) {
   state.employees = state.employees.filter(e => e.id !== employeeId);
-  saveLocalBackup();
-  renderEmployees();
-  renderOverview();
-  await clearRow(state.spreadsheetId, 'Employees', employeeId);
+  saveLocalBackup(); renderEmployees(); renderOverview();
+  await clearRow(state.branchKey, 'Employees', employeeId);
 }
 
 function renderEmployees() {
   const container = document.getElementById('employees-list');
   if (!container) return;
-
   if (state.employees.length === 0) {
-    container.innerHTML = '<div class="empty-state">لا يوجد موظفون مسجلون بعد</div>';
-    return;
+    container.innerHTML = '<div class="empty-state">لا يوجد موظفون مسجلون بعد</div>'; return;
   }
-
   container.innerHTML = '';
-
   state.employees.forEach(emp => {
     const template = document.getElementById('employee-card-template');
-    const card = template.content.cloneNode(true).querySelector('.employee-card');
-
+    const card     = template.content.cloneNode(true).querySelector('.employee-card');
     card.dataset.empId = emp.id;
-    card.querySelector('.employee-card__name').textContent = emp.name;
-    card.querySelector('.emp-salary-display').textContent = formatAmount(emp.salary);
-    card.querySelector('.emp-loan-display').textContent = formatAmount(emp.loanBalance);
-    card.querySelector('.emp-updated-display').textContent = formatDate(emp.lastUpdated);
+    card.querySelector('.employee-card__name').textContent  = emp.name;
+    card.querySelector('.emp-salary-display').textContent   = formatAmount(emp.salary);
+    card.querySelector('.emp-loan-display').textContent     = formatAmount(emp.loanBalance);
+    card.querySelector('.emp-updated-display').textContent  = formatDate(emp.lastUpdated);
 
-    // Remove button
     card.querySelector('.employee-remove-btn').addEventListener('click', () => {
-      if (confirm(`هل أنت متأكد من حذف الموظف ${emp.name}؟`)) {
-        removeEmployee(emp.id);
-      }
+      if (confirm(`هل أنت متأكد من حذف الموظف ${emp.name}؟`)) removeEmployee(emp.id);
     });
 
-    // Loan button
-    const loanBtn       = card.querySelector('.loan-btn');
-    const loanAmountEl  = card.querySelector('.loan-amount-input');
-    const loanNoteEl    = card.querySelector('.loan-note-input');
-    const loanErrEl     = card.querySelector('.loan-error');
-
+    const loanBtn      = card.querySelector('.loan-btn');
+    const loanAmountEl = card.querySelector('.loan-amount-input');
+    const loanNoteEl   = card.querySelector('.loan-note-input');
+    const loanErrEl    = card.querySelector('.loan-error');
     loanBtn.addEventListener('click', async () => {
       loanErrEl.style.display = 'none';
       const amount = parseFloat(loanAmountEl.value);
-      if (!amount || amount <= 0) {
-        loanErrEl.textContent = 'يجب أن يكون المبلغ أكبر من صفر';
-        loanErrEl.style.display = 'block';
-        return;
-      }
+      if (!amount || amount <= 0) { loanErrEl.textContent = 'يجب أن يكون المبلغ أكبر من صفر'; loanErrEl.style.display = 'block'; return; }
       loanBtn.disabled = true;
-      const note = loanNoteEl.value.trim();
-      await giveLoan(emp.id, amount, note);
-      loanAmountEl.value = '';
-      loanNoteEl.value   = '';
-      loanBtn.disabled   = false;
+      await giveLoan(emp.id, amount, loanNoteEl.value.trim());
+      loanAmountEl.value = ''; loanNoteEl.value = '';
+      loanBtn.disabled = false;
     });
 
-    // Deduct button
     const deductBtn      = card.querySelector('.deduct-btn');
     const deductAmountEl = card.querySelector('.deduct-amount-input');
     const deductErrEl    = card.querySelector('.deduct-error');
-
     deductBtn.addEventListener('click', async () => {
       deductErrEl.style.display = 'none';
       const amount = parseFloat(deductAmountEl.value);
-      if (!amount || amount <= 0) {
-        deductErrEl.textContent = 'يجب أن يكون المبلغ أكبر من صفر';
-        deductErrEl.style.display = 'block';
-        return;
-      }
-      if (amount > emp.loanBalance) {
-        deductErrEl.textContent = `مبلغ الخصم أكبر من رصيد السلفة (${formatAmount(emp.loanBalance)})`;
-        deductErrEl.style.display = 'block';
-        return;
-      }
+      if (!amount || amount <= 0) { deductErrEl.textContent = 'يجب أن يكون المبلغ أكبر من صفر'; deductErrEl.style.display = 'block'; return; }
+      if (amount > emp.loanBalance) { deductErrEl.textContent = `مبلغ الخصم أكبر من رصيد السلفة (${formatAmount(emp.loanBalance)})`; deductErrEl.style.display = 'block'; return; }
       deductBtn.disabled = true;
       await deductLoan(emp.id, amount);
       deductAmountEl.value = '';
-      deductBtn.disabled   = false;
+      deductBtn.disabled = false;
     });
 
     container.appendChild(card);
   });
 }
 
-window.addEmployee = addEmployee;
-
 /* ─────────────────────────────────────────────
-   Utility
+   Utilities
 ───────────────────────────────────────────── */
 function setText(id, text) {
   const el = document.getElementById(id);
@@ -858,40 +548,22 @@ function setText(id, text) {
 
 function escapeHtml(str) {
   if (!str) return '';
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#039;');
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+            .replace(/"/g,'&quot;').replace(/'/g,'&#039;');
 }
 
 /* ─────────────────────────────────────────────
-   Initialize Date Fields
+   Bootstrap
 ───────────────────────────────────────────── */
-function initDateFields() {
+function bootstrap() {
   const today = getTodayString();
-  ['sale-date', 'purchase-date', 'expense-date'].forEach(id => {
+  ['sale-date','purchase-date','expense-date'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.value = today;
   });
-}
-
-/* ─────────────────────────────────────────────
-   App Bootstrap
-───────────────────────────────────────────── */
-async function bootstrap() {
-  // Initialize date fields
-  initDateFields();
-
-  // Start on login page
   showPage('login');
-
-  // Init auth (non-blocking — GIS loads async)
-  initAuth();
 }
 
-// Run on DOM ready
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', bootstrap);
 } else {
