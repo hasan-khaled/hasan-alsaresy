@@ -5,7 +5,7 @@
  * ⚠️ After deploying Code.gs, paste your web app URL below.
  */
 
-export const SCRIPT_URL = 'YOUR_APPS_SCRIPT_URL_HERE';
+export const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwTxX_Qq0msCusIDGCZSfihNvjqa7zphHrOaiGdl1TqmajjUxBxytxbCwG0VHBgwVxQ/exec';
 
 // ── Branch keys used as query param values ─────────────────
 export const BRANCH_KEYS = {
