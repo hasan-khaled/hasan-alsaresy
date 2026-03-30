@@ -4,7 +4,7 @@
  */
 
 // ⚠️ Replace with your real OAuth Client ID from Google Cloud Console
-export const CLIENT_ID = '588867230099-9io0ij131ig6sh620n1m47h2lavh101f.apps.googleusercontent.com';
+export const CLIENT_ID = '588867230099-c87i2qa4hlqlq9j7ddqgehgfuskdof9k.apps.googleusercontent.com';
 
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets';
 
