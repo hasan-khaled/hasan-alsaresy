@@ -11,11 +11,22 @@ import {
 /* ─────────────────────────────────────────────
    Passcode
 ───────────────────────────────────────────── */
-const PASSCODE = '1406';
-let _passcodeCallback = null;
+const PASSCODE       = '1406';  // sensitive actions (delete, deduct)
+const LOGIN_PASSCODE = '1980';  // branch login
 
-function requirePasscode(callback) {
-  _passcodeCallback = callback;
+let _passcodeCallback = null;
+let _passcodeExpected = PASSCODE;
+
+// requirePasscode(callback)             — uses PASSCODE (1406)
+// requirePasscode(expectedCode, callback) — uses supplied code
+function requirePasscode(expectedOrCb, callback) {
+  if (typeof expectedOrCb === 'function') {
+    _passcodeExpected = PASSCODE;
+    _passcodeCallback = expectedOrCb;
+  } else {
+    _passcodeExpected = expectedOrCb;
+    _passcodeCallback = callback;
+  }
   const overlay = document.getElementById('passcode-overlay');
   const input   = document.getElementById('passcode-input');
   const errEl   = document.getElementById('passcode-error');
@@ -32,11 +43,12 @@ function requirePasscode(callback) {
 function confirmPasscode() {
   const input = document.getElementById('passcode-input');
   const errEl = document.getElementById('passcode-error');
-  if (input.value === PASSCODE) {
+  if (input.value === _passcodeExpected) {
     document.getElementById('passcode-overlay').style.display = 'none';
     input.value = '';
     const cb = _passcodeCallback;
     _passcodeCallback = null;
+    _passcodeExpected = PASSCODE;
     if (cb) cb();
   } else {
     errEl.style.display = 'block';
@@ -236,7 +248,7 @@ function validateField(inputEl, rules, groupId, errorSpanId, customMessage) {
 /* ─────────────────────────────────────────────
    LOGIN — No Google auth. Just pick a branch.
 ───────────────────────────────────────────── */
-async function selectBranch(branchName) {
+function selectBranch(branchName) {
   // Guard: Apps Script URL not set yet
   if (SCRIPT_URL === 'YOUR_APPS_SCRIPT_URL_HERE') {
     const errEl = document.getElementById('login-error');
@@ -247,24 +259,27 @@ async function selectBranch(branchName) {
     return;
   }
 
-  state.currentBranch = branchName;
-  state.branchKey     = BRANCH_KEYS[branchName];
+  // Require login passcode before entering any branch
+  requirePasscode(LOGIN_PASSCODE, async () => {
+    state.currentBranch = branchName;
+    state.branchKey     = BRANCH_KEYS[branchName];
 
-  // Update top bar
-  const topbarBranch = document.getElementById('topbar-branch');
-  if (topbarBranch) topbarBranch.textContent = `فرع: ${branchName}`;
+    // Update top bar
+    const topbarBranch = document.getElementById('topbar-branch');
+    if (topbarBranch) topbarBranch.textContent = `فرع: ${branchName}`;
 
-  showPage('app');
-  const overviewBtn = document.querySelector('.tab-btn[data-tab="overview"]');
-  switchTab('overview', overviewBtn);
+    showPage('app');
+    const overviewBtn = document.querySelector('.tab-btn[data-tab="overview"]');
+    switchTab('overview', overviewBtn);
 
-  // Show cached data instantly
-  loadLocalBackup();
-  renderAll();
+    // Show cached data instantly
+    loadLocalBackup();
+    renderAll();
 
-  // Init sheet structure then pull latest from Sheets
-  await initSpreadsheet(state.branchKey);
-  await loadFromSheets();
+    // Init sheet structure then pull latest from Sheets
+    await initSpreadsheet(state.branchKey);
+    await loadFromSheets();
+  });
 }
 window.selectBranch = selectBranch;
 
