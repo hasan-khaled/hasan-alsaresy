@@ -9,6 +9,53 @@ import {
 } from './sheets.js';
 
 /* ─────────────────────────────────────────────
+   Passcode
+───────────────────────────────────────────── */
+const PASSCODE = '1406';
+let _passcodeCallback = null;
+
+function requirePasscode(callback) {
+  _passcodeCallback = callback;
+  const overlay = document.getElementById('passcode-overlay');
+  const input   = document.getElementById('passcode-input');
+  const errEl   = document.getElementById('passcode-error');
+  if (!overlay) return;
+  errEl.style.display = 'none';
+  input.value = '';
+  overlay.style.display = 'flex';
+  setTimeout(() => input.focus(), 100);
+
+  // Allow pressing Enter to confirm
+  input.onkeydown = (e) => { if (e.key === 'Enter') confirmPasscode(); };
+}
+
+function confirmPasscode() {
+  const input = document.getElementById('passcode-input');
+  const errEl = document.getElementById('passcode-error');
+  if (input.value === PASSCODE) {
+    document.getElementById('passcode-overlay').style.display = 'none';
+    input.value = '';
+    const cb = _passcodeCallback;
+    _passcodeCallback = null;
+    if (cb) cb();
+  } else {
+    errEl.style.display = 'block';
+    input.value = '';
+    input.focus();
+  }
+}
+
+function cancelPasscode() {
+  document.getElementById('passcode-overlay').style.display = 'none';
+  document.getElementById('passcode-input').value = '';
+  document.getElementById('passcode-error').style.display = 'none';
+  _passcodeCallback = null;
+}
+
+window.confirmPasscode = confirmPasscode;
+window.cancelPasscode  = cancelPasscode;
+
+/* ─────────────────────────────────────────────
    Branch Configuration
 ───────────────────────────────────────────── */
 const BRANCHES = {
@@ -503,7 +550,9 @@ function renderEmployees() {
     card.querySelector('.emp-updated-display').textContent  = formatDate(emp.lastUpdated);
 
     card.querySelector('.employee-remove-btn').addEventListener('click', () => {
-      if (confirm(`هل أنت متأكد من حذف الموظف ${emp.name}؟`)) removeEmployee(emp.id);
+      requirePasscode(() => {
+        if (confirm(`هل أنت متأكد من حذف الموظف ${emp.name}؟`)) removeEmployee(emp.id);
+      });
     });
 
     const loanBtn      = card.querySelector('.loan-btn');
@@ -523,15 +572,17 @@ function renderEmployees() {
     const deductBtn      = card.querySelector('.deduct-btn');
     const deductAmountEl = card.querySelector('.deduct-amount-input');
     const deductErrEl    = card.querySelector('.deduct-error');
-    deductBtn.addEventListener('click', async () => {
+    deductBtn.addEventListener('click', () => {
       deductErrEl.style.display = 'none';
       const amount = parseFloat(deductAmountEl.value);
       if (!amount || amount <= 0) { deductErrEl.textContent = 'يجب أن يكون المبلغ أكبر من صفر'; deductErrEl.style.display = 'block'; return; }
       if (amount > emp.loanBalance) { deductErrEl.textContent = `مبلغ الخصم أكبر من رصيد السلفة (${formatAmount(emp.loanBalance)})`; deductErrEl.style.display = 'block'; return; }
-      deductBtn.disabled = true;
-      await deductLoan(emp.id, amount);
-      deductAmountEl.value = '';
-      deductBtn.disabled = false;
+      requirePasscode(async () => {
+        deductBtn.disabled = true;
+        await deductLoan(emp.id, amount);
+        deductAmountEl.value = '';
+        deductBtn.disabled = false;
+      });
     });
 
     container.appendChild(card);

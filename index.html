@@ -377,6 +377,28 @@
     </div>
   </template>
 
+  <!-- ===== PASSCODE MODAL ===== -->
+  <div id="passcode-overlay" class="passcode-overlay" style="display:none;">
+    <div class="passcode-modal">
+      <div class="passcode-modal__title">🔒 أدخل الرمز السري</div>
+      <p class="passcode-modal__sub">هذا الإجراء يتطلب رمز التحقق</p>
+      <input
+        type="password"
+        id="passcode-input"
+        class="form-input passcode-input"
+        placeholder="••••"
+        maxlength="10"
+        inputmode="numeric"
+        autocomplete="off"
+      >
+      <div id="passcode-error" class="passcode-error" style="display:none;">رمز خاطئ. حاول مرة أخرى.</div>
+      <div class="passcode-modal__actions">
+        <button class="btn btn-primary" id="passcode-confirm-btn" onclick="confirmPasscode()">تأكيد</button>
+        <button class="btn btn-danger" onclick="cancelPasscode()">إلغاء</button>
+      </div>
+    </div>
+  </div>
+
   <script type="module" src="app.js"></script>
 </body>
 </html>

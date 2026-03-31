@@ -923,3 +923,64 @@ input[type="number"] {
     gap: 4px;
   }
 }
+
+/* ============================================================
+   PASSCODE MODAL
+   ============================================================ */
+.passcode-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.passcode-modal {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 32px 28px;
+  width: 100%;
+  max-width: 340px;
+  text-align: center;
+}
+
+.passcode-modal__title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+}
+
+.passcode-modal__sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 20px;
+}
+
+.passcode-input {
+  text-align: center;
+  font-size: 22px;
+  letter-spacing: 6px;
+  font-weight: 700;
+  max-width: 180px;
+  margin: 0 auto 10px;
+  display: block;
+}
+
+.passcode-error {
+  font-size: 13px;
+  color: var(--danger);
+  margin-bottom: 16px;
+  min-height: 20px;
+}
+
+.passcode-modal__actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 8px;
+}
