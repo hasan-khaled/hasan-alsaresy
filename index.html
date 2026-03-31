@@ -298,28 +298,36 @@
 
       <!-- EMPLOYEES TAB -->
       <div id="tab-employees" class="tab-content">
-        <div class="section-title">إضافة موظف جديد</div>
-        <form class="entry-form" id="employee-form" onsubmit="addEmployee(event)">
-          <div class="form-row">
-            <div class="form-group form-group--desc" id="emp-name-group">
-              <label class="form-label" for="emp-name">اسم الموظف</label>
-              <input type="text" id="emp-name" class="form-input" placeholder="اسم الموظف..." maxlength="100">
-              <span class="form-error" id="emp-name-error">يجب أن يكون الاسم أكثر من حرفين</span>
-            </div>
-            <div class="form-group form-group--amount" id="emp-salary-group">
-              <label class="form-label" for="emp-salary">الراتب الشهري (JD)</label>
-              <input type="number" id="emp-salary" class="form-input" placeholder="0.00" min="0.01" step="0.01">
-              <span class="form-error" id="emp-salary-error">يجب أن يكون المبلغ أكبر من صفر</span>
-            </div>
-            <div class="form-group form-group--btn">
-              <label class="form-label">&nbsp;</label>
-              <button type="submit" class="btn btn-primary" id="emp-submit-btn">إضافة موظف</button>
-            </div>
-          </div>
-        </form>
 
-        <div class="section-title">قائمة الموظفين</div>
-        <div id="employees-list">
+        <!-- List comes first -->
+        <div class="section-title-row">
+          <span class="section-title" style="border:none; margin:0; padding:0;">قائمة الموظفين</span>
+          <button class="btn-add-employee" onclick="toggleEmployeeForm()">+ إضافة موظف</button>
+        </div>
+
+        <!-- Collapsible add form -->
+        <div id="employee-form-wrap" class="employee-form-wrap" style="display:none;">
+          <form class="entry-form" id="employee-form" onsubmit="addEmployee(event)">
+            <div class="form-row">
+              <div class="form-group form-group--desc" id="emp-name-group">
+                <label class="form-label" for="emp-name">اسم الموظف</label>
+                <input type="text" id="emp-name" class="form-input" placeholder="اسم الموظف..." maxlength="100">
+                <span class="form-error" id="emp-name-error">يجب أن يكون الاسم أكثر من حرفين</span>
+              </div>
+              <div class="form-group form-group--amount" id="emp-salary-group">
+                <label class="form-label" for="emp-salary">الراتب الشهري (JD)</label>
+                <input type="number" id="emp-salary" class="form-input" placeholder="0.00" min="0.01" step="0.01">
+                <span class="form-error" id="emp-salary-error">يجب أن يكون المبلغ أكبر من صفر</span>
+              </div>
+              <div class="form-group form-group--btn">
+                <label class="form-label">&nbsp;</label>
+                <button type="submit" class="btn btn-primary" id="emp-submit-btn">حفظ</button>
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <div id="employees-list" style="margin-top:16px;">
           <div class="empty-state">لا يوجد موظفون مسجلون بعد</div>
         </div>
       </div>

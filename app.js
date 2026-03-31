@@ -56,6 +56,22 @@ window.confirmPasscode = confirmPasscode;
 window.cancelPasscode  = cancelPasscode;
 
 /* ─────────────────────────────────────────────
+   Employee form toggle
+───────────────────────────────────────────── */
+function toggleEmployeeForm(forceClose) {
+  const wrap = document.getElementById('employee-form-wrap');
+  if (!wrap) return;
+  const isOpen = wrap.style.display !== 'none';
+  if (forceClose || isOpen) {
+    wrap.style.display = 'none';
+  } else {
+    wrap.style.display = 'block';
+    setTimeout(() => document.getElementById('emp-name')?.focus(), 80);
+  }
+}
+window.toggleEmployeeForm = toggleEmployeeForm;
+
+/* ─────────────────────────────────────────────
    Branch Configuration
 ───────────────────────────────────────────── */
 const BRANCHES = {
@@ -496,6 +512,7 @@ async function addEmployee(event) {
   state.employees.push(emp);
   saveLocalBackup(); renderEmployees();
   nameEl.value = ''; salaryEl.value = '';
+  toggleEmployeeForm(true); // collapse form after save
   await appendRow(state.branchKey, 'Employees', [emp.id, emp.name, emp.salary, emp.loanBalance, emp.lastUpdated]);
   btn.disabled = false;
 }
