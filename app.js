@@ -471,10 +471,12 @@ async function addExpense(event) {
 }
 window.addExpense = addExpense;
 
-async function deleteExpense(id) {
-  state.expenses = state.expenses.filter(s => s.id !== id);
-  saveLocalBackup(); renderExpenses(); renderOverview();
-  await clearRow(state.branchKey, 'Expenses', id);
+function deleteExpense(id) {
+  requirePasscode(async () => {
+    state.expenses = state.expenses.filter(s => s.id !== id);
+    saveLocalBackup(); renderExpenses(); renderOverview();
+    await clearRow(state.branchKey, 'Expenses', id);
+  });
 }
 window.deleteExpense = deleteExpense;
 
@@ -544,10 +546,10 @@ async function deductLoan(employeeId, amount) {
   return true;
 }
 
-async function removeEmployee(employeeId) {
+function removeEmployee(employeeId) {
+  // Intentionally does NOT clear the row from the sheet — data is preserved.
   state.employees = state.employees.filter(e => e.id !== employeeId);
   saveLocalBackup(); renderEmployees(); renderOverview();
-  await clearRow(state.branchKey, 'Employees', employeeId);
 }
 
 function renderEmployees() {
